@@ -3,8 +3,8 @@
  #include <HTTPClient.h>
  #include <bits/stdc++.h>
 
-const char* ssid = "hunar";
-const char* password =  "dontakeit";
+const char* ssid = "ssid";
+const char* password =  "password";
 
 #define base_pin 13
 #define arm_pin 12
