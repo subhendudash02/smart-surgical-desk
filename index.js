@@ -1,16 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
 import express from "express";
-import sqlite3 from "sqlite3";
 
-const db = new sqlite3.Database("./finger.sqlite3");
+const supabase = createClient('https://ztvjlvcntofhedvagtdy.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dmpsdmNudG9maGVkdmFndGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTgzOTcwNDEsImV4cCI6MjAxMzk3MzA0MX0.5f7VBafg8RotQ4Jm71Iy5mr8IUaVjzxeML72oHsaFj4');
 const app = express();
 app.use(express.json());
 const port = 5000;
-
-db.serialize(() => {
-    db.run("drop table if exists finger");
-    db.run("Create table if not exists finger (id integer primary key, finger integer, component text)");
-    db.run("Insert into finger (finger, component) values (1, 'Scissor');");
-});
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -18,30 +12,28 @@ app.use((req, res, next) => {
     next();
 });
 
-app.get("/api/hand_gesture/", (req, res) => {
-    db.all("Select finger from finger;", [],  (err, rows) => {
-        res.json(rows[rows.length-1]);
-        // status: !err ? "ok" : "error", 
-    });
+app.get("/api/hand_gesture/", async (req, res) => {
+    const { data, error } = await supabase.from('component_log').select('*');
+    res.send(data[0]);
 });
 
-app.post("/api/hand_gesture/", (req, res) => {
-    db.each("Select component from finger ORDER BY id DESC LIMIT 1", [], (err, rows) => {
-        if (rows.component != req.body.component) {
-            db.run("Insert into finger (finger, component) values (?, ?);", 
-                [req.body.finger, req.body.component], (err) => {
-                res.json({status: !err ? "inserted" : "error"});
-                if (err) {
-                    console.log(err);
-                }
-            });
-        }
-        else {
-            res.json({status: "error"});
-        }
-    });
+app.post("/api/hand_gesture/", async (req, res) => {
+    // Select component from component_log ORDER BY id DESC LIMIT 1
+    const { data, error } = await supabase.from('component_log').select('component')
+                            .order('id', { ascending: false }).limit(1);
+    
+    if (data[0].component != req.body.component) {
+        // Insert new component to component_log
+        const { data, error } = await supabase.from('component_log').insert([
+            { component: req.body.component, finger: req.body.finger }
+        ]);
+        res.json({status: !error ? "inserted" : error});
+    }
+    else {
+        res.json({status: "ok", msg: "prev data entered already"});
+    }
 });
 
-app.listen(port, "192.168.114.66", () => {
+app.listen(port, () => {
     console.log(`api listening at ${port}`);
 });
