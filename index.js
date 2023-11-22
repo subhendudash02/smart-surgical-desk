@@ -14,7 +14,7 @@ app.use((req, res, next) => {
 
 app.get("/api/hand_gesture/", async (req, res) => {
     const { data, error } = await supabase.from('component_log').select('*');
-    res.send(data[0]);
+    res.json({"finger": data[0].finger});
 });
 
 app.post("/api/hand_gesture/", async (req, res) => {

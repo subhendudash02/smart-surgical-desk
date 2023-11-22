@@ -43,7 +43,7 @@ app.post("/api/hand_gesture/", (req, res) => {
     });
 });
 
-app.listen(port, "192.168.117.66", () => {
+app.listen(port, () => {
     console.log(`api listening at ${port}`);
 });
 
